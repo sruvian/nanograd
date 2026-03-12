@@ -1,5 +1,5 @@
-from tensor import Tensor
-from tensor import relu, log, exp, sin
+from tensors import Tensor
+from tensors import relu, log, exp, sin
 import numpy as np
 
 

@@ -6,8 +6,8 @@ class Tensor():
 
     def __init__(self, data: int | float | np.ndarray, _prev: tuple[Tensor, ...] = (), _op : str = "", req_grad: bool = True) -> None:
         
-        self.data: np.ndarray = data if isinstance(data, np.ndarray) else np.array(data) # casting to NumPy for future Vectorization Support
-        self.grad: np.ndarray = np.zeros_like(data)
+        self.data: np.ndarray = data if isinstance(data, np.ndarray) else np.array(data, dtype = float) # casting to NumPy for future Vectorization Support
+        self.grad: np.ndarray = np.zeros_like(self.data, dtype = float)
         self.prev = _prev
         self.op = _op
         self._backward = lambda : None # Always attached to the child node
@@ -23,9 +23,10 @@ class Tensor():
 
         def _backward():
             if self._req_grad:
-                self.grad += out.grad
+                self.grad += unbroadcast(out.grad, self.data.shape)
             if other._req_grad:
-                other.grad += out.grad
+                other.grad += unbroadcast(out.grad, other.data.shape)
+
         out._backward = _backward
 
         return out
@@ -41,9 +42,9 @@ class Tensor():
         out =  Tensor(data, _prev = (self, other), _op = "sub")
         def _backward():
             if self._req_grad:
-                self.grad += out.grad
+                self.grad += unbroadcast(out.grad, self.data.shape)
             if other._req_grad:
-                other.grad += -out.grad
+                other.grad += -unbroadcast(out.grad, other.data.shape)
         out._backward = _backward
         
         return out
@@ -61,9 +62,9 @@ class Tensor():
 
         def _backward():
              if self._req_grad:
-                self.grad += out.grad * other.data
+                self.grad += unbroadcast(out.grad * other.data, self.data.shape)
              if other._req_grad:
-                other.grad += out.grad * self.data
+                other.grad += unbroadcast(out.grad * self.data, other.data.shape)
         out._backward = _backward
 
         return out
@@ -84,9 +85,9 @@ class Tensor():
 
         def _backward():
             if self._req_grad:
-                self.grad += out.grad * (1 / other.data)
+                self.grad += unbroadcast(out.grad, self.data.shape) * (1 / other.data)
             if other._req_grad:
-                other.grad += -out.grad * (self.data / (other.data ** 2))
+                other.grad += - unbroadcast(out.grad, other.data.shape) * (self.data / (other.data ** 2))
 
         out._backward = _backward
         return out
@@ -111,7 +112,76 @@ class Tensor():
         
         out._backward = _backward
         return out
+
+    def __matmul__(self: Tensor, other: Tensor) -> Tensor:
+        if not isinstance(other, Tensor):
+            other = Tensor(other)
+        out = Tensor(np.matmul(self.data, other.data), _prev = (self, other), _op = "matmul")
+
+        def _backward():
+            if self._req_grad:
+                self.grad += out.grad @ other.data.T
+            if other._req_grad:
+                other.grad += self.data.T @ out.grad
+        
+        out._backward = _backward
+        return out
     
+
+    def sum(self: Tensor) -> Tensor:
+        out = Tensor(np.sum(self.data), _prev = (self,), _op = "sum")
+
+        def _backward():
+            if self._req_grad:
+                self.grad += np.ones_like(self.data) * out.grad
+
+        out._backward = _backward
+
+        return out
+    
+    def mean(self: Tensor) -> Tensor:
+        
+        return self.sum() / self.data.size
+    
+    def max(self: Tensor) -> Tensor:
+
+        idx = np.unravel_index(np.argmax(self.data), self.data.shape)
+        out = Tensor(np.max(self.data), _prev = (self,), _op = "max")
+
+        def _backward():
+        
+            self.grad[idx] += out.grad
+        
+        out._backward = _backward
+
+        return out
+
+    def reshape(self: Tensor, shape: int| tuple) -> Tensor:
+
+        out = Tensor(np.reshape(self.data, shape), _prev = (self, ), _op = "reshape")
+
+        def _backward():
+            if self._req_grad:
+                self.grad += np.reshape(out.grad, self.data.shape)
+        
+        out._backward = _backward
+
+        return out
+    
+    @property
+    def T(self: Tensor) -> Tensor:
+
+        out = Tensor(self.data.T, _prev = (self, ), _op = "T")
+
+        def _backward():
+            if self._req_grad:
+                self.grad += out.grad.T
+        
+        out._backward = _backward
+
+        return out
+
+
     def backward(self):
         topo = []
         visited = set()
@@ -134,6 +204,16 @@ class Tensor():
          if self._req_grad:
             self.grad = np.zeros_like(self.data)
 
+def unbroadcast(grad: np.ndarray, shape) -> np.ndarray:
+
+    while grad.ndim > len(shape):
+        grad = grad.sum(axis = 0)
+
+    for i, dim in enumerate(shape):
+        if dim == 1:
+            grad = grad.sum(axis = i, keepdims = True)
+
+    return grad
 
 
 def log(x : Tensor) -> Tensor:
