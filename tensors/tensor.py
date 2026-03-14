@@ -12,6 +12,7 @@ class Tensor():
         self.op = _op
         self._backward = lambda : None # Always attached to the child node
         self._req_grad = req_grad
+        self.shape = self.data.shape
 
 
     def __add__(self, other:int | float | Tensor) -> Tensor:
@@ -127,6 +128,19 @@ class Tensor():
         out._backward = _backward
         return out
     
+    def __getitem__(self, idx) -> Tensor:
+        
+        out = Tensor(self.data[idx], _prev= (self, ), _op = "slice")
+
+        def _backward():
+            if self._req_grad:
+                self.grad[idx] += out.grad
+        out._backward = _backward
+        return out
+    
+    
+    
+
 
     def sum(self: Tensor) -> Tensor:
         out = Tensor(np.sum(self.data), _prev = (self,), _op = "sum")
@@ -214,6 +228,35 @@ def unbroadcast(grad: np.ndarray, shape) -> np.ndarray:
             grad = grad.sum(axis = i, keepdims = True)
 
     return grad
+
+def concat(tensor_list: list[Tensor] | tuple[Tensor, ...], axis: int = 0):
+
+    data = np.concatenate([t.data for t in tensor_list], axis=axis)
+
+    out = Tensor(data, _prev=tuple(tensor_list), _op="concat")
+
+    def _backward():
+        if out.grad is None:
+            return
+
+        start = 0
+        for t in tensor_list:
+            if not t._req_grad:
+                start += t.data.shape[axis]
+                continue
+
+            size = t.data.shape[axis]
+
+            slicer = [slice(None)] * out.grad.ndim
+            slicer[axis] = slice(start, start + size)
+
+            t.grad += out.grad[tuple(slicer)]
+
+            start += size
+
+    out._backward = _backward
+
+    return out
 
 
 def log(x : Tensor) -> Tensor:
