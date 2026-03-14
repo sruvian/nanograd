@@ -38,7 +38,7 @@ class BaseModule:
 
 class Sequential(BaseModule):
 
-    def __init__(self, modules: tuple[BaseModule, ...] = ()) -> None:
+    def __init__(self, *modules) -> None:
         super().__init__()
         self.modules = modules
     

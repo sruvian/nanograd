@@ -171,11 +171,11 @@ def test_activation_call_interface():
 
 def test_sequential_forward():
 
-    model = Sequential((
+    model = Sequential(
         Linear(3, 4),
         ReLU(),
         Linear(4, 2)
-    ))
+    )
 
     x = Tensor(np.random.randn(5, 3))
 
@@ -185,11 +185,11 @@ def test_sequential_forward():
 
 def test_sequential_backward():
 
-    model = Sequential((
+    model = Sequential(
         Linear(3, 4),
         ReLU(),
         Linear(4, 1)
-    ))
+    )
 
     x = Tensor(np.random.randn(6, 3))
 
@@ -208,10 +208,10 @@ def test_sequential_backward():
 
 def test_sequential_parameters():
 
-    model = Sequential((
+    model = Sequential(
         Linear(3, 4),
         Linear(4, 2)
-    ))
+    )
 
     params = model.parameters()
 
@@ -219,10 +219,10 @@ def test_sequential_parameters():
 
 def test_sequential_zero_grad():
 
-    model = Sequential((
+    model = Sequential(
         Linear(3, 4),
         Linear(4, 1)
-    ))
+    )
 
     x = Tensor(np.random.randn(5, 3))
 
@@ -237,13 +237,13 @@ def test_sequential_zero_grad():
 
 def test_sequential_with_activations():
 
-    model = Sequential((
+    model = Sequential(
         Linear(3, 8),
         ReLU(),
         Tanh(),
         Sigmoid(),
         Linear(8, 1)
-    ))
+    )
 
     x = Tensor(np.random.randn(4, 3))
 
@@ -253,7 +253,7 @@ def test_sequential_with_activations():
 
 def test_sequential_empty():
 
-    model = Sequential(())
+    model = Sequential()
 
     x = Tensor(np.random.randn(3, 4))
 
