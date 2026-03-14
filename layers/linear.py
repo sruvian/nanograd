@@ -6,7 +6,8 @@ from .module import BaseModule
 class Linear(BaseModule):
 
     def __init__(self, input_dim: int, output_dim: int, bias: bool = True)-> None:
-
+        
+        super().__init__()
         self.W = Tensor(np.random.rand(input_dim, output_dim))
 
         self.bias = bias
