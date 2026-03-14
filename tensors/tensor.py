@@ -286,3 +286,19 @@ def tanh(x: Tensor) -> Tensor:
     out._backward = _backward
 
     return out
+
+def sigmoid(x: Tensor) -> Tensor:
+
+    if not isinstance(x, Tensor):
+        x = Tensor(x)
+    
+    temp = 1 / (1 + np.exp(-x.data))
+    out = Tensor(temp, _prev = (x, ), _op = "sigmoid")
+
+    def _backward():
+        if x._req_grad:
+            x.grad += out.grad * out.data * (1 - out.data)
+    
+    out._backward = _backward
+
+    return out

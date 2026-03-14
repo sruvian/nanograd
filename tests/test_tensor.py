@@ -1,5 +1,5 @@
 from tensors import Tensor
-from tensors import relu, log, exp, sin
+from tensors import relu, log, exp, sin, sigmoid
 import numpy as np
 
 
@@ -111,3 +111,64 @@ def test_requires_grad():
 
     assert x.grad == 0.0
     assert y.grad == 2.0
+
+
+def test_sigmoid_forward():
+
+    x = Tensor(0.0)
+
+    y = sigmoid(x)
+
+    assert abs(y.data - 0.5) < 1e-6
+
+def test_sigmoid_backward():
+
+    x = Tensor(0.0)
+
+    y = sigmoid(x)
+
+    y.backward()
+
+    expected = 0.25
+
+    assert abs(x.grad - expected) < 1e-6
+
+
+def test_sigmoid_vector():
+
+    x = Tensor(np.array([0.0, 1.0, -1.0]))
+
+    y = sigmoid(x)
+
+    expected = 1 / (1 + np.exp(-x.data))
+
+    assert np.allclose(y.data, expected)
+
+
+def test_sigmoid_vector_backward():
+
+    x = Tensor(np.array([0.0, 1.0, -1.0]))
+
+    y = sigmoid(x).sum()
+
+    y.backward()
+
+    sig = 1 / (1 + np.exp(-x.data))
+
+    expected = sig * (1 - sig)
+
+    assert np.allclose(x.grad, expected)
+
+def test_sigmoid_chain_rule():
+
+    x = Tensor(1.0)
+
+    y = sigmoid(x) * 2
+
+    y.backward()
+
+    sig = 1 / (1 + np.exp(-1))
+
+    expected = 2 * sig * (1 - sig)
+
+    assert abs(x.grad - expected) < 1e-6
