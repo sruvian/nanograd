@@ -4,7 +4,7 @@ import numpy as np
 
 class Tensor():
 
-    def __init__(self, data: int | float | np.ndarray, _prev: tuple[Tensor, ...] = (), _op : str = "", req_grad: bool = True) -> None:
+    def __init__(self, data: int | float | np.ndarray | list, _prev: tuple[Tensor, ...] = (), _op : str = "", req_grad: bool = True) -> None:
         
         self.data: np.ndarray = data if isinstance(data, np.ndarray) else np.array(data, dtype = float) # casting to NumPy for future Vectorization Support
         self.grad: np.ndarray = np.zeros_like(self.data, dtype = float)
