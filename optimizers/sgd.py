@@ -1,5 +1,6 @@
 from .optimizer import BaseOptimizer
 from tensors import Tensor
+import numpy as np
 
 class SGD(BaseOptimizer):
 
@@ -11,9 +12,8 @@ class SGD(BaseOptimizer):
     def step(self):
 
         for param in self.params:
-            param.data -= self.lr * param.grad
+            param.data -= self.lr * param.g.data
 
-    def zero_grad(self):
-
-        for param in self.params:
-            param.reset_grad()
+def zero_grad(self):
+    for p in self.parameters():
+        p.grad = Tensor(np.zeros_like(p.data))
