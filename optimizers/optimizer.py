@@ -1,4 +1,5 @@
 from tensors import Tensor
+from typing import Callable
 
 class BaseOptimizer:
 
@@ -7,7 +8,7 @@ class BaseOptimizer:
         self.params = model_parameters
         self.lr = lr
 
-    def step(self):
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
 
         raise NotImplementedError
 

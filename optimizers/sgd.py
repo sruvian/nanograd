@@ -1,5 +1,6 @@
 from .optimizer import BaseOptimizer
 from tensors import Tensor
+from typing import Callable
 
 class SGD(BaseOptimizer):
 
@@ -8,12 +9,7 @@ class SGD(BaseOptimizer):
         self.params = model_parameters
         self.lr = lr
 
-    def step(self):
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
 
         for param in self.params:
             param.data -= self.lr * param.grad
-
-    def zero_grad(self):
-
-        for param in self.params:
-            param.reset_grad()
